@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>アズレン 設定判別帳</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* 上に結果を貼り付け、下で数える台帳。海の濃紺＋金 */
+:root{
+  --bg:#eef2f7; --panel:#fdfeff; --ink:#15233a; --sub:#5a6a80; --line:#cdd7e4;
+  --flame:#1f4f9a; --gold:#9a6a00; --bar:#a8b9d2; --bar-top:#1f4f9a; --warn:#a8321e; --chip:#e5ecf5;
+  --display:"Shippori Mincho B1","Yu Mincho","Hiragino Mincho ProN",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1522; --panel:#162236; --ink:#eaf1fb; --sub:#a2b2c8; --line:#2c3d58;
+  --flame:#8cb8f6; --gold:#e6b94f; --bar:#3c5276; --bar-top:#8cb8f6; --warn:#ff9a82; --chip:#1f2f48; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1522; --panel:#162236; --ink:#eaf1fb; --sub:#a2b2c8; --line:#2c3d58;
+  --flame:#8cb8f6; --gold:#e6b94f; --bar:#3c5276; --bar-top:#8cb8f6; --warn:#ff9a82; --chip:#1f2f48; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);
+  padding-block:0 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:16px}
+.result{position:sticky;top:0;z-index:5;background:var(--panel);border:1px solid var(--line);border-top:0;
+  border-radius:0 0 8px 8px;padding:10px 14px 12px;display:grid;gap:8px}
+h1{font:800 16px/1.3 var(--display);margin:0;color:var(--flame)}
+.top{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.top div{min-width:0}
+.top small{display:block;color:var(--sub);font-size:11px;letter-spacing:.04em}
+.top b{font:800 24px/1.15 var(--display);font-variant-numeric:tabular-nums}
+.top .pay b{color:var(--gold)}
+.bars{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:3px 12px}
+.row{display:grid;grid-template-columns:3.2em 1fr 3.4em;gap:4px;min-width:0;align-items:center;font-size:12px;font-variant-numeric:tabular-nums}
+.track{height:10px;background:var(--chip);border-radius:2px;overflow:hidden}
+.fill{height:100%;background:var(--bar);transition:width .2s}
+.row.lead .fill{background:var(--bar-top)}
+.row.lead{font-weight:700}
+.row.out{color:var(--sub);text-decoration:line-through}
+.row span:last-child{text-align:right}
+.note{font-size:12px;color:var(--sub);margin:0}
+.note.warn{color:var(--warn);font-weight:700}
+section{display:grid;gap:10px}
+h2{font:700 15px/1.3 var(--display);margin:0;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.field{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.field label{font-weight:500}
+.field .hint{grid-column:1/-1;font-size:12px;color:var(--sub)}
+.step{display:flex;align-items:center;gap:4px}
+input[type=number]{width:5.4em;height:42px;font:700 17px var(--body);text-align:center;background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;font-variant-numeric:tabular-nums}
+button{font:500 14px var(--body);color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;min-height:42px;min-width:42px;padding:0 10px;cursor:pointer}
+:focus-visible{outline:2px solid var(--flame);outline-offset:1px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;grid-column:1/-1}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{padding:4px;font-size:13px}
+.seg button[aria-pressed=true]{background:var(--flame);color:var(--panel);border-color:var(--flame);font-weight:700}
+details{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:0 12px}
+summary{cursor:pointer;min-height:42px;display:flex;align-items:center;font-weight:500}
+summary .n{margin-left:auto;color:var(--flame);font-weight:700;font-size:13px}
+details > .inner{display:grid;gap:10px;padding-bottom:12px}
+.checks{display:grid;gap:2px;padding-bottom:10px}
+.checks label{display:grid;grid-template-columns:24px 1fr auto;gap:6px;align-items:center;min-height:36px;font-size:14px}
+.checks input{width:20px;height:20px;accent-color:var(--flame)}
+.tag{font-size:12px;color:var(--sub);white-space:nowrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.foot{font-size:12px;color:var(--sub);display:grid;gap:6px}
+.foot p{margin:0}
+.foot a{color:var(--flame)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="result" aria-live="polite">
+    <h1>アズレン 設定判別帳</h1>
+    <div class="top">
+      <div><small>最有力</small><b id="best">-</b></div>
+      <div><small>設定4以上</small><b id="high">-</b></div>
+      <div class="pay"><small>期待機械割</small><b id="pay">-</b></div>
+    </div>
+    <div class="bars" id="bars"></div>
+    <p class="note" id="status"></p>
+  </div>
+
+  <section>
+    <h2>台の見立て</h2>
+    <div class="seg" id="priors"></div>
+    <p class="note" id="priorNote"></p>
+  </section>
+
+  <section>
+    <h2>初当たり</h2>
+    <div class="field">
+      <label for="games">通常時ゲーム数</label>
+      <div class="step"><input id="games" type="number" min="0" inputmode="numeric"></div>
+      <div class="quick">
+        <button data-add="games:100">+100</button><button data-add="games:500">+500</button><button data-add="games:-100">-100</button>
+      </div>
+      <div class="hint">AT中を除いたゲーム数です。総ゲーム数を入れると設定が低く出ます。</div>
+    </div>
+    <div class="field">
+      <label for="bonus">ボーナス初当たり</label>
+      <div class="step"><button data-add="bonus:-1" aria-label="ボーナスを1減らす">-</button><input id="bonus" type="number" min="0" inputmode="numeric"><button data-add="bonus:1" aria-label="ボーナスを1増やす">+</button></div>
+      <div class="hint">通常時に当たったボーナスの回数です。AT中のボーナスは数えません。</div>
+    </div>
+    <div class="field">
+      <label for="at">AT初当たり</label>
+      <div class="step"><button data-add="at:-1" aria-label="AT初当たりを1減らす">-</button><input id="at" type="number" min="0" inputmode="numeric"><button data-add="at:1" aria-label="AT初当たりを1増やす">+</button></div>
+      <div class="hint">ATはボーナスから入るので、「ボーナスのうち何回がATにつながったか」として計算します。</div>
+    </div>
+    <div class="field">
+      <label for="blue">青7ボーナス</label>
+      <div class="step"><button data-add="blue:-1" aria-label="青7ボーナスを1減らす">-</button><input id="blue" type="number" min="0" inputmode="numeric"><button data-add="blue:1" aria-label="青7ボーナスを1増やす">+</button></div>
+      <div class="hint">通常時のボーナスのうち青7だった回数です。設定1は約22回に1回、設定6は約13回に1回。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>小役（数えた人だけ）</h2>
+    <details id="koyaku"><summary>共通ベル・チェリー・スイカ<span class="n" id="koyakuN"></span></summary><div class="inner">
+      <div class="field">
+        <label for="kg">小役を数えたゲーム数</label>
+        <div class="step"><input id="kg" type="number" min="0" inputmode="numeric"></div>
+        <div class="hint">通常時とAT中で確率は同じなので、総ゲーム数で数えられます。数えた区間のゲーム数を入れてください。</div>
+      </div>
+      <div class="field">
+        <label for="bell">共通ベル</label>
+        <div class="step"><button data-add="bell:-1" aria-label="共通ベルを1減らす">-</button><input id="bell" type="number" min="0" inputmode="numeric"><button data-add="bell:1" aria-label="共通ベルを1増やす">+</button></div>
+        <div class="hint">設定1 1/22.1 〜 設定6 1/18.9</div>
+      </div>
+      <div class="field">
+        <label for="cherry">チェリー（弱）</label>
+        <div class="step"><button data-add="cherry:-1" aria-label="チェリーを1減らす">-</button><input id="cherry" type="number" min="0" inputmode="numeric"><button data-add="cherry:1" aria-label="チェリーを1増やす">+</button></div>
+        <div class="hint">設定1 1/79.0 〜 設定6 1/72.0。強チェリーは設定差なしなので数えません。</div>
+      </div>
+      <div class="field">
+        <label for="suika">スイカ（弱）</label>
+        <div class="step"><button data-add="suika:-1" aria-label="スイカを1減らす">-</button><input id="suika" type="number" min="0" inputmode="numeric"><button data-add="suika:1" aria-label="スイカを1増やす">+</button></div>
+        <div class="hint">設定1 1/104.0 〜 設定6 1/96.4。強スイカは数えません。</div>
+      </div>
+    </div></details>
+  </section>
+
+  <section>
+    <h2>ボーナス・AT終了画面</h2>
+    <p class="note">見た画面ごとに回数を数えます。デフォルト2種の偏りも奇数・偶数の判別になります。</p>
+    <div id="screens" class="wrap" style="gap:8px"></div>
+  </section>
+
+  <section>
+    <h2>明石チャレンジ成功の告知</h2>
+    <p class="note">残りゲーム数が奇数・偶数・最終ゲームのどこで告知されたかを数えます。奇数設定は奇数、偶数設定は偶数が72%です。</p>
+    <div class="field">
+      <label for="akOdd">奇数ゲームで告知</label>
+      <div class="step"><button data-add="akOdd:-1" aria-label="奇数を1減らす">-</button><input id="akOdd" type="number" min="0" inputmode="numeric"><button data-add="akOdd:1" aria-label="奇数を1増やす">+</button></div>
+    </div>
+    <div class="field">
+      <label for="akEven">偶数ゲームで告知</label>
+      <div class="step"><button data-add="akEven:-1" aria-label="偶数を1減らす">-</button><input id="akEven" type="number" min="0" inputmode="numeric"><button data-add="akEven:1" aria-label="偶数を1増やす">+</button></div>
+    </div>
+    <div class="field">
+      <label for="akLast">最終ゲームで告知</label>
+      <div class="step"><button data-add="akLast:-1" aria-label="最終を1減らす">-</button><input id="akLast" type="number" min="0" inputmode="numeric"><button data-add="akLast:1" aria-label="最終を1増やす">+</button></div>
+      <div class="hint">最終ゲームは全設定10%なので判別には効きませんが、記録用に置いています。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>見えた確定演出</h2>
+    <div id="hints" class="wrap" style="gap:8px"></div>
+    <p class="note">加賀バトルのキャラ紹介（反転エンタープライズ=奇数、反転ベルファスト=偶数、瑞鶴=4・6、オイゲン=5・6）は「示唆」で出現率が未公表なので計算に入れていません。</p>
+  </section>
+
+  <div class="tools">
+    <button id="sample">例を入れる</button>
+    <button id="reset">全部消す</button>
+  </div>
+
+  <div class="foot">
+    <p>出玉や勝ちを保証するものではありません。「濃厚」は100%と断定された情報ではなく、数値は解析サイトの掲載値です。「他機種準拠」の演出は、本機で未確認の推測です。</p>
+    <p>数値の出典：<a href="https://nana-press.com/kaiseki/machine/993/31193/" target="_blank" rel="noopener">なな徹</a>（2026/08/28更新）</p>
+  </div>
+</div>
+
+<script>
+// ==calc==
+const SETTINGS = [1,2,3,4,5,6];
+const BONUS = [167.4,166.5,164.3,161.3,158.9,156.0];       // ボーナス初当たり 1/x
+const AT    = [598.9,589.5,564.2,527.1,496.4,467.5];       // AT初当たり 1/x
+const BLUE  = [3665.8,3544.0,3056.6,2581.4,2331.5,2075.6]; // 通常時の青7ボーナス 1/x
+const BELL  = [22.1,21.7,21.0,20.4,19.8,18.9];
+const CHERRY= [79.0,78.0,77.1,75.3,74.5,72.0];
+const SUIKA = [104.0,102.4,100.8,99.3,97.8,96.4];
+const PAY   = [97.9,98.6,100.7,105.3,110.6,114.9];         // 機械割
+// 終了画面の出現率(%)。0 の画面が出たらその設定は消える
+const SCREENS = [
+  {id:'scE',  name:'エンタープライズ',             note:'デフォルト・奇数寄り', r:[43.3,33.4,50.1,29.4,43.6,28.7]},
+  {id:'scB',  name:'ベルファスト',                 note:'デフォルト・偶数寄り', r:[43.3,50.1,33.4,44.1,29.1,43.0]},
+  {id:'scEB', name:'エンタープライズ＆ベルファスト', note:'高設定示唆(弱)',      r:[12.5,12.5,12.5,20.0,20.6,21.3]},
+  {id:'scAk', name:'赤城',                         note:'高設定示唆(強)',      r:[1.0,1.0,1.0,3.2,3.5,3.6]},
+  {id:'scAll',name:'全員集合',                     note:'設定2以上',           r:[0,3.0,3.0,3.0,3.0,3.0]},
+  {id:'scKA', name:'加賀＆赤城',                   note:'設定4以上',           r:[0,0,0,0.2,0.2,0.3]},
+  {id:'scP',  name:'パーティ',                     note:'設定6',               r:[0,0,0,0,0,0.1]},
+];
+const AKASHI = {odd:[.72,.18],even:[.18,.72],last:[.10,.10]}; // [奇数設定, 偶数設定]
+const PRIORS = {
+  even:{name:'均等',w:[1,1,1,1,1,1],note:'全設定を同じ確率で見ます。実際の店より高設定寄りに出やすい見立てです。'},
+  low:{name:'低設定中心',w:[40,25,15,10,5,5],note:'普段の店を想定した仮の配分です（1:40 2:25 3:15 4:10 5:5 6:5）。'},
+  event:{name:'狙い日',w:[15,15,15,20,20,15],note:'高設定が入りやすい日を想定した仮の配分です（1〜3:各15 4,5:各20 6:15）。'},
+};
+// rule = 残る設定の一覧
+const HINTS = [
+  {group:'AT中の獲得枚数表示',items:[['246OVER',[2,4,6],'偶数','他機種準拠'],['456OVER',[4,5,6]],['555OVER',[5,6]],['666OVER',[6]]]},
+  {group:'加賀バトル勝利時の裏ボタン',items:[['「たぁーのしいなぁー！」',[5,6]],['「赤城の愛、受け止めてくださるかしら？」',[6]]]},
+  {group:'玉ちゃんトロフィー',items:[['銅',[2,3,4,5,6],null,'他機種準拠'],['銀',[4,5,6],null,'他機種準拠'],['金',[4,5,6],'設定4以上(5以上期待)','他機種準拠'],['ゼブラ柄',[5,6],null,'他機種準拠'],['虹',[6],null,'他機種準拠']]},
+];
+function binom(k,n,p){ return k*Math.log(p)+(n-k)*Math.log(1-p); }
+
+function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},akOdd=0,akEven=0,akLast=0,prior='even',rules=[]}){
+  const w = PRIORS[prior].w;
+  const logs = SETTINGS.map((s,i)=>{
+    if(!rules.every(r=>r.includes(s))) return -Infinity;
+    let l = Math.log(w[i]);
+    // ボーナスは通常G、ATと青7はボーナスの中の割合として数える（重複させない）
+    if(games>0) l += binom(bonus,games,1/BONUS[i]);
+    if(bonus>0){
+      l += binom(Math.min(at,bonus),bonus,BONUS[i]/AT[i]);
+      l += binom(Math.min(blue,bonus),bonus,BONUS[i]/BLUE[i]);
+    }
+    if(kg>0){
+      l += bell*Math.log(1/BELL[i]) + cherry*Math.log(1/CHERRY[i]) + suika*Math.log(1/SUIKA[i]);
+      l += Math.max(kg-bell-cherry-suika,0)*Math.log(1-1/BELL[i]-1/CHERRY[i]-1/SUIKA[i]);
+    }
+    for(const x of SCREENS){
+      const n = sc[x.id]||0;
+      if(n) l += n*Math.log(x.r[i]/100);
+    }
+    const par = s%2 ? 0 : 1;
+    l += akOdd*Math.log(AKASHI.odd[par]) + akEven*Math.log(AKASHI.even[par]) + akLast*Math.log(AKASHI.last[par]);
+    return l;
+  });
+  const top = Math.max(...logs);
+  if(top===-Infinity) return null;
+  const raw = logs.map(l=>Math.exp(l-top));
+  const sum = raw.reduce((a,b)=>a+b,0);
+  const post = raw.map(x=>x/sum);
+  return {
+    post,
+    high: post[3]+post[4]+post[5],
+    pay: post.reduce((a,p,i)=>a+p*PAY[i],0),
+    best: post.indexOf(Math.max(...post))+1,
+  };
+}
+// ==/calc==
+
+const KEY='azurlane-settei-v1';
+const FIELDS=['games','bonus','at','blue','kg','bell','cherry','suika','akOdd','akEven','akLast',...SCREENS.map(x=>x.id)];
+const $=id=>document.getElementById(id);
+let state={prior:'even',checked:{}};
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({...state,...readNums()})); }catch(e){} }
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(!d) return;
+    if(PRIORS[d.prior]) state.prior=d.prior;
+    state.checked=d.checked||{};
+    FIELDS.forEach(f=>{ if(d[f]) $(f).value=d[f]; });
+  }catch(e){}
+}
+function readNums(){
+  const o={};
+  FIELDS.forEach(f=>{ o[f]=Math.max(0,Math.floor(Number($(f).value)||0)); });
+  return o;
+}
+function hintId(g,i){ return 'h'+g+'-'+i; }
+function ruleTag(r){
+  if(r.length===1) return '設定'+r[0];
+  if(r.every((x,i)=>i===0||x===r[i-1]+1) && r[r.length-1]===6) return `設定${r[0]}以上`;
+  return '設定'+r.join('・');
+}
+
+function buildPriors(){
+  $('priors').innerHTML=Object.entries(PRIORS).map(([k,p])=>`<button id="prior-${k}" data-prior="${k}">${p.name}</button>`).join('');
+}
+function buildScreens(){
+  $('screens').innerHTML=SCREENS.map(x=>`<div class="field"><label for="${x.id}">${x.name}</label>`+
+    `<div class="step"><button data-add="${x.id}:-1" aria-label="${x.name}を1減らす">-</button><input id="${x.id}" type="number" min="0" inputmode="numeric"><button data-add="${x.id}:1" aria-label="${x.name}を1増やす">+</button></div>`+
+    `<div class="hint">${x.note}</div></div>`).join('');
+}
+function buildHints(){
+  $('hints').innerHTML=HINTS.map((h,g)=>`<details id="grp${g}"><summary>${h.group}<span class="n" id="cnt${g}"></span></summary><div class="checks">`+
+    h.items.map(([label,rule,tag,guess],i)=>
+      `<label><input type="checkbox" id="${hintId(g,i)}"><span>${label}${guess?`<br><small class="tag">${guess}</small>`:''}</span><span class="tag">${tag||ruleTag(rule)}</span></label>`
+    ).join('')+`</div></details>`).join('');
+  HINTS.forEach((h,g)=>h.items.forEach((_,i)=>{ const id=hintId(g,i); $(id).checked=!!state.checked[id]; }));
+}
+function activeRules(){
+  const rules=[]; let guess=false;
+  HINTS.forEach((h,g)=>{
+    let n=0;
+    h.items.forEach(([,rule,,gs],i)=>{
+      if(state.checked[hintId(g,i)]){ rules.push(rule); n++; if(gs) guess=true; }
+    });
+    $('cnt'+g).textContent=n?n+'件':'';
+    if(n) $('grp'+g).open=true;
+  });
+  return {rules,guess};
+}
+function render(){
+  const n=readNums(), {rules,guess}=activeRules(), s=$('status');
+  document.querySelectorAll('[data-prior]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.prior===state.prior));
+  $('priorNote').textContent=PRIORS[state.prior].note;
+  const koy=n.bell+n.cherry+n.suika;
+  $('koyakuN').textContent=n.kg?`${n.kg}G`:'';
+  if(n.kg) $('koyaku').open=true;
+  const sc={}; SCREENS.forEach(x=>{ sc[x.id]=n[x.id]; });
+  const scN=SCREENS.reduce((a,x)=>a+n[x.id],0);
+  const akN=n.akOdd+n.akEven+n.akLast;
+  let msg='', warn=false;
+  if(n.bonus>n.games){ msg='ボーナスが通常時ゲーム数より多くなっています。入力を確認してください。'; warn=true; }
+  else if(n.at>n.bonus){ msg='AT初当たりがボーナスより多くなっています。ATはボーナス経由なので、ボーナスにも数えてください。'; warn=true; }
+  else if(n.blue>n.bonus){ msg='青7ボーナスがボーナス初当たりより多くなっています。'; warn=true; }
+  else if(koy>n.kg && koy){ msg='小役の回数が数えたゲーム数より多くなっています。'; warn=true; }
+  let r=calc({...n,sc,prior:state.prior,rules});
+  if(!r){
+    msg='入れた確定演出と終了画面が矛盾していて、残る設定がありません。チェックを見直してください。'; warn=true;
+    r=calc({prior:state.prior});
+  }
+  const blank=!n.games&&!n.kg&&!scN&&!akN&&!rules.length;
+  $('best').textContent=blank?'-':'設定'+r.best;
+  $('high').textContent=(r.high*100).toFixed(1)+'%';
+  $('pay').textContent=r.pay.toFixed(1)+'%';
+  $('bars').innerHTML=SETTINGS.map((x,i)=>{
+    const p=r.post[i], out=p===0;
+    return `<div class="row${x===r.best&&!blank?' lead':''}${out?' out':''}"><span>設定${x}</span><div class="track"><div class="fill" style="width:${(p*100).toFixed(1)}%"></div></div><span>${(p*100).toFixed(1)}%</span></div>`;
+  }).join('');
+  if(!msg){
+    if(blank) msg='通常時ゲーム数とボーナス・AT初当たりを入れると計算します。';
+    else {
+      const parts=[];
+      if(n.games) parts.push(`通常時${n.games}G（ボーナス ${n.bonus?'1/'+(n.games/n.bonus).toFixed(1):'なし'}、AT ${n.at?'1/'+(n.games/n.at).toFixed(1):'なし'}）`);
+      if(scN) parts.push(`終了画面${scN}回`);
+      if(akN) parts.push(`明石${akN}回`);
+      msg=parts.join('・')+'。';
+      if(n.games && n.games<2000) msg+='2000G未満はまだブレが大きい段階です。';
+      else if(n.games && n.games<5000) msg+='傾向は見えますが、初当たりの設定差が小さいので断定はできません。';
+    }
+    if(guess) msg+=' 他機種準拠の演出を含みます。';
+  }
+  s.textContent=msg; s.classList.toggle('warn',warn);
+  save();
+}
+
+let armed=null;
+document.addEventListener('click',e=>{
+  const add=e.target.closest('[data-add]');
+  if(add){
+    const [f,d]=add.dataset.add.split(':');
+    $(f).value=Math.max(0,(Number($(f).value)||0)+Number(d)); render(); return;
+  }
+  const p=e.target.closest('[data-prior]');
+  if(p){ state.prior=p.dataset.prior; render(); }
+});
+document.addEventListener('input',e=>{
+  if(e.target.type==='checkbox') state.checked[e.target.id]=e.target.checked;
+  render();
+});
+$('sample').addEventListener('click',()=>{
+  Object.entries({games:3200,bonus:20,at:6,blue:1,scE:6,scB:10,scEB:4,akOdd:1,akEven:3}).forEach(([k,v])=>{ $(k).value=v; });
+  render();
+});
+$('reset').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(!armed){
+    b.textContent='もう一度押すと消します'; armed=setTimeout(()=>{armed=null;b.textContent='全部消す';},3000); return;
+  }
+  clearTimeout(armed); armed=null; b.textContent='全部消す';
+  FIELDS.forEach(f=>{ $(f).value=''; });
+  state={prior:'even',checked:{}};
+  buildHints(); render();
+});
+
+buildScreens(); load(); buildPriors(); buildHints(); render();
+</script>
+</body>
+</html>
