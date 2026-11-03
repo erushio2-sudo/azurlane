@@ -148,6 +148,12 @@ details > .inner{display:grid;gap:10px;padding-bottom:12px}
   </section>
 
   <section>
+    <h2>加賀バトルのキャラ紹介</h2>
+    <p class="note">加賀バトル前半で失敗したときのキャラ紹介を数えます。デフォルト2種の偏りも奇数・偶数の判別になります。加賀赤城（AT濃厚）は設定差がないので数えません。</p>
+    <div id="kaga" class="wrap" style="gap:8px"></div>
+  </section>
+
+  <section>
     <h2>明石チャレンジ成功の告知</h2>
     <p class="note">残りゲーム数が奇数・偶数・最終ゲームのどこで告知されたかを数えます。奇数設定は奇数、偶数設定は偶数が72%です。</p>
     <div class="field">
@@ -168,7 +174,7 @@ details > .inner{display:grid;gap:10px;padding-bottom:12px}
   <section>
     <h2>見えた確定演出</h2>
     <div id="hints" class="wrap" style="gap:8px"></div>
-    <p class="note">加賀バトルのキャラ紹介（反転エンタープライズ=奇数、反転ベルファスト=偶数、瑞鶴=4・6、オイゲン=5・6）は「示唆」で出現率が未公表なので計算に入れていません。</p>
+    <p class="note">裏ボタンのボイスは、ボーナス規定回数でAT当選したときだけ出ます。</p>
   </section>
 
   <div class="tools">
@@ -177,8 +183,10 @@ details > .inner{display:grid;gap:10px;padding-bottom:12px}
   </div>
 
   <div class="foot">
-    <p>出玉や勝ちを保証するものではありません。「濃厚」は100%と断定された情報ではなく、数値は解析サイトの掲載値です。「他機種準拠」の演出は、本機で未確認の推測です。</p>
-    <p>数値の出典：<a href="https://nana-press.com/kaiseki/machine/993/31193/" target="_blank" rel="noopener">なな徹</a>（2026/08/28更新）</p>
+    <p>出玉や勝ちを保証するものではありません。「濃厚」は100%と断定された情報ではなく、数値は解析サイトの掲載値です。</p>
+    <p>設定5のAT初当たりは、1/496.4（なな徹・パチ7）と1/469.4（1geki）で食い違っています。機械割の並びに合う1/496.4を使っています。</p>
+    <p>計算に入れていない設定差：レア役からのボーナス当選率（滞在状態で大きく変わり、状態が見えないため）、AT終了後の高確移行率、裏モード移行率。どれも差がごく小さい要素です。</p>
+    <p>数値の出典：<a href="https://nana-press.com/kaiseki/machine/993/31193/" target="_blank" rel="noopener">なな徹</a>（2026/08/28更新）／<a href="https://p-town.dmm.com/machines/4847" target="_blank" rel="noopener">P-town</a>（2026/11/03更新）／<a href="https://pachiseven.jp/machines_v2/7223" target="_blank" rel="noopener">パチ7</a>／<a href="https://1geki.jp/slot/l_azurlane/0/" target="_blank" rel="noopener">1geki</a></p>
   </div>
 </div>
 
@@ -202,7 +210,16 @@ const SCREENS = [
   {id:'scKA', name:'加賀＆赤城',                   note:'設定4以上',           r:[0,0,0,0.2,0.2,0.3]},
   {id:'scP',  name:'パーティ',                     note:'設定6',               r:[0,0,0,0,0,0.1]},
 ];
-const AKASHI = {odd:[.72,.18],even:[.18,.72],last:[.10,.10]}; // [奇数設定, 偶数設定]
+// 加賀バトル前半失敗時のキャラ紹介シナリオ選択率(%)
+const KAGA = [
+  {id:'kgE', name:'エンタープライズ',     note:'デフォルト・奇数寄り', r:[41.5,33.2,49.8,32.9,50.0,32.5]},
+  {id:'kgB', name:'ベルファスト',         note:'デフォルト・偶数寄り', r:[41.5,49.8,33.2,49.3,32.3,48.8]},
+  {id:'kgRE',name:'反転エンタープライズ', note:'奇数示唆',             r:[10.0,5.0,10.0,5.0,10.0,5.0]},
+  {id:'kgRB',name:'反転ベルファスト',     note:'偶数示唆',             r:[5.0,10.0,5.0,10.0,5.0,10.0]},
+  {id:'kgZ', name:'瑞鶴',                 note:'設定4・6示唆',         r:[1.0,1.0,1.0,1.6,1.2,1.9]},
+  {id:'kgO', name:'オイゲン',             note:'設定5・6示唆',         r:[1.0,1.0,1.0,1.2,1.5,1.9]},
+];
+const AKASHI ={odd:[.72,.18],even:[.18,.72],last:[.10,.10]}; // [奇数設定, 偶数設定]
 const PRIORS = {
   even:{name:'均等',w:[1,1,1,1,1,1],note:'全設定を同じ確率で見ます。実際の店より高設定寄りに出やすい見立てです。'},
   low:{name:'低設定中心',w:[40,25,15,10,5,5],note:'普段の店を想定した仮の配分です（1:40 2:25 3:15 4:10 5:5 6:5）。'},
@@ -210,13 +227,13 @@ const PRIORS = {
 };
 // rule = 残る設定の一覧
 const HINTS = [
-  {group:'AT中の獲得枚数表示',items:[['246OVER',[2,4,6],'偶数','他機種準拠'],['456OVER',[4,5,6]],['555OVER',[5,6]],['666OVER',[6]]]},
+  {group:'AT中の獲得枚数表示',items:[['246OVER',[2,4,6],'偶数'],['456OVER',[4,5,6]],['555OVER',[5,6]],['666OVER',[6]]]},
   {group:'加賀バトル勝利時の裏ボタン',items:[['「たぁーのしいなぁー！」',[5,6]],['「赤城の愛、受け止めてくださるかしら？」',[6]]]},
-  {group:'玉ちゃんトロフィー',items:[['銅',[2,3,4,5,6],null,'他機種準拠'],['銀',[4,5,6],null,'他機種準拠'],['金',[4,5,6],'設定4以上(5以上期待)','他機種準拠'],['ゼブラ柄',[5,6],null,'他機種準拠'],['虹',[6],null,'他機種準拠']]},
+  {group:'玉ちゃんトロフィー',items:[['銅',[2,3,4,5,6]],['銀',[3,4,5,6]],['金',[4,5,6]],['ゼブラ柄',[5,6]],['虹',[6]]]},
 ];
 function binom(k,n,p){ return k*Math.log(p)+(n-k)*Math.log(1-p); }
 
-function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},akOdd=0,akEven=0,akLast=0,prior='even',rules=[]}){
+function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},kaga={},akOdd=0,akEven=0,akLast=0,prior='even',rules=[]}){
   const w = PRIORS[prior].w;
   const logs = SETTINGS.map((s,i)=>{
     if(!rules.every(r=>r.includes(s))) return -Infinity;
@@ -233,6 +250,10 @@ function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},ak
     }
     for(const x of SCREENS){
       const n = sc[x.id]||0;
+      if(n) l += n*Math.log(x.r[i]/100);
+    }
+    for(const x of KAGA){
+      const n = kaga[x.id]||0;
       if(n) l += n*Math.log(x.r[i]/100);
     }
     const par = s%2 ? 0 : 1;
@@ -254,7 +275,7 @@ function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},ak
 // ==/calc==
 
 const KEY='azurlane-settei-v1';
-const FIELDS=['games','bonus','at','blue','kg','bell','cherry','suika','akOdd','akEven','akLast',...SCREENS.map(x=>x.id)];
+const FIELDS=['games','bonus','at','blue','kg','bell','cherry','suika','akOdd','akEven','akLast',...SCREENS.map(x=>x.id),...KAGA.map(x=>x.id)];
 const $=id=>document.getElementById(id);
 let state={prior:'even',checked:{}};
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify({...state,...readNums()})); }catch(e){} }
@@ -283,7 +304,11 @@ function buildPriors(){
   $('priors').innerHTML=Object.entries(PRIORS).map(([k,p])=>`<button id="prior-${k}" data-prior="${k}">${p.name}</button>`).join('');
 }
 function buildScreens(){
-  $('screens').innerHTML=SCREENS.map(x=>`<div class="field"><label for="${x.id}">${x.name}</label>`+
+  $('screens').innerHTML=counters(SCREENS);
+  $('kaga').innerHTML=counters(KAGA);
+}
+function counters(list){
+  return list.map(x=>`<div class="field"><label for="${x.id}">${x.name}</label>`+
     `<div class="step"><button data-add="${x.id}:-1" aria-label="${x.name}を1減らす">-</button><input id="${x.id}" type="number" min="0" inputmode="numeric"><button data-add="${x.id}:1" aria-label="${x.name}を1増やす">+</button></div>`+
     `<div class="hint">${x.note}</div></div>`).join('');
 }
@@ -315,18 +340,20 @@ function render(){
   if(n.kg) $('koyaku').open=true;
   const sc={}; SCREENS.forEach(x=>{ sc[x.id]=n[x.id]; });
   const scN=SCREENS.reduce((a,x)=>a+n[x.id],0);
+  const kaga={}; KAGA.forEach(x=>{ kaga[x.id]=n[x.id]; });
+  const kgN=KAGA.reduce((a,x)=>a+n[x.id],0);
   const akN=n.akOdd+n.akEven+n.akLast;
   let msg='', warn=false;
   if(n.bonus>n.games){ msg='ボーナスが通常時ゲーム数より多くなっています。入力を確認してください。'; warn=true; }
   else if(n.at>n.bonus){ msg='AT初当たりがボーナスより多くなっています。ATはボーナス経由なので、ボーナスにも数えてください。'; warn=true; }
   else if(n.blue>n.bonus){ msg='青7ボーナスがボーナス初当たりより多くなっています。'; warn=true; }
   else if(koy>n.kg && koy){ msg='小役の回数が数えたゲーム数より多くなっています。'; warn=true; }
-  let r=calc({...n,sc,prior:state.prior,rules});
+  let r=calc({...n,sc,kaga,prior:state.prior,rules});
   if(!r){
     msg='入れた確定演出と終了画面が矛盾していて、残る設定がありません。チェックを見直してください。'; warn=true;
     r=calc({prior:state.prior});
   }
-  const blank=!n.games&&!n.kg&&!scN&&!akN&&!rules.length;
+  const blank=!n.games&&!n.kg&&!scN&&!kgN&&!akN&&!rules.length;
   $('best').textContent=blank?'-':'設定'+r.best;
   $('high').textContent=(r.high*100).toFixed(1)+'%';
   $('pay').textContent=r.pay.toFixed(1)+'%';
@@ -340,6 +367,7 @@ function render(){
       const parts=[];
       if(n.games) parts.push(`通常時${n.games}G（ボーナス ${n.bonus?'1/'+(n.games/n.bonus).toFixed(1):'なし'}、AT ${n.at?'1/'+(n.games/n.at).toFixed(1):'なし'}）`);
       if(scN) parts.push(`終了画面${scN}回`);
+      if(kgN) parts.push(`キャラ紹介${kgN}回`);
       if(akN) parts.push(`明石${akN}回`);
       msg=parts.join('・')+'。';
       if(n.games && n.games<2000) msg+='2000G未満はまだブレが大きい段階です。';
