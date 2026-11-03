@@ -91,27 +91,15 @@ details > .inner{display:grid;gap:10px;padding-bottom:12px}
 
   <section>
     <h2>初当たり</h2>
-    <details id="counter" open><summary>途中から打つとき<span class="n" id="counterN"></span></summary><div class="inner">
-      <div class="field">
-        <label for="ctStart">打ち始めのゲーム数</label>
-        <div class="step"><input id="ctStart" type="number" min="0" inputmode="numeric"></div>
-        <div class="hint">座ったときにデータカウンターに出ていた総ゲーム数です。朝一から打つときは0のままで大丈夫です。</div>
-      </div>
-      <div class="field">
-        <label for="ctNow">現在のゲーム数</label>
-        <div class="step"><input id="ctNow" type="number" min="0" inputmode="numeric"></div>
-        <div class="hint">今のデータカウンターの総ゲーム数です。入れると、差を自分の通常時ゲーム数として下の欄に入れます。</div>
-      </div>
-      <div class="field">
-        <label for="ctAt">そのうちAT中のゲーム数</label>
-        <div class="step"><input id="ctAt" type="number" min="0" inputmode="numeric"></div>
-        <div class="hint">自分が打った間のAT中のゲーム数です。カウンターの総ゲーム数にATが含まれる機種では、ここに入れた分を引きます。</div>
-      </div>
-    </div></details>
     <div class="field">
-      <label for="games">通常時ゲーム数</label>
+      <label for="ctStart">打ち始めのゲーム数</label>
+      <div class="step"><input id="ctStart" type="number" min="0" inputmode="numeric"></div>
+      <div class="hint">途中から打つときに、座ったときのデータカウンターのゲーム数を入れます。下の欄に今のゲーム数を入れると、差で計算します。朝一からなら空欄のままで大丈夫です。</div>
+    </div>
+    <div class="field">
+      <label for="games" id="gamesLabel">通常時ゲーム数</label>
       <div class="step"><input id="games" type="number" min="0" inputmode="numeric"></div>
-      <div class="quick" id="gamesQuick">
+      <div class="quick">
         <button data-add="games:100">+100</button><button data-add="games:500">+500</button><button data-add="games:-100">-100</button>
       </div>
       <div class="hint" id="gamesHint">AT中を除いたゲーム数です。総ゲーム数を入れると設定が低く出ます。</div>
@@ -293,7 +281,7 @@ function calc({games=0,bonus=0,at=0,blue=0,kg=0,bell=0,cherry=0,suika=0,sc={},ka
 // ==/calc==
 
 const KEY='azurlane-settei-v1';
-const FIELDS=['ctStart','ctNow','ctAt','games','bonus','at','blue','kg','bell','cherry','suika','akOdd','akEven','akLast',...SCREENS.map(x=>x.id),...KAGA.map(x=>x.id)];
+const FIELDS=['ctStart','games','bonus','at','blue','kg','bell','cherry','suika','akOdd','akEven','akLast',...SCREENS.map(x=>x.id),...KAGA.map(x=>x.id)];
 const $=id=>document.getElementById(id);
 let state={prior:'even',checked:{}};
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify({...state,...readNums()})); }catch(e){} }
@@ -349,21 +337,18 @@ function activeRules(){
   });
   return {rules,guess};
 }
-// 現在のゲーム数が入っていれば、通常時ゲーム数はカウンターの差から出す
-function applyCounter(){
-  const n=readNums(), on=n.ctNow>0, g=$('games');
-  g.readOnly=on;
-  $('gamesQuick').hidden=on;
+// 打ち始めが入っていれば、ゲーム数欄はカウンターの今の値として読み、差を通常時ゲーム数にする
+function applyCounter(n){
+  const off=n.ctStart, on=off>0, raw=n.games;
+  $('gamesLabel').textContent=on?'現在のゲーム数':'通常時ゲーム数';
+  if(on) n.games=Math.max(raw-off,0);
   $('gamesHint').textContent=on
-    ? `データカウンターから計算中：${n.ctNow} − ${n.ctStart}${n.ctAt?` − AT中${n.ctAt}`:''}。直接入れるときは「現在のゲーム数」を空にしてください。`
+    ? (raw ? `データカウンターの今のゲーム数です。${raw} − ${off} ＝ ${n.games}Gで計算します。` : 'データカウンターの今のゲーム数を入れてください。打ち始めとの差で計算します。')
     : 'AT中を除いたゲーム数です。総ゲーム数を入れると設定が低く出ます。';
-  $('counterN').textContent=on?`${Math.max(n.ctNow-n.ctStart,0)}G打った`:'';
-  if(on){ g.value=Math.max(n.ctNow-n.ctStart-n.ctAt,0); $('counter').open=true; }
-  return on && n.ctNow<n.ctStart+n.ctAt;
+  return on && raw>0 && raw<off;
 }
 function render(){
-  const ctBad=applyCounter();
-  const n=readNums(), {rules,guess}=activeRules(), s=$('status');
+  const n=readNums(), ctBad=applyCounter(n), {rules,guess}=activeRules(), s=$('status');
   document.querySelectorAll('[data-prior]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.prior===state.prior));
   $('priorNote').textContent=PRIORS[state.prior].note;
   const koy=n.bell+n.cherry+n.suika;
@@ -375,7 +360,7 @@ function render(){
   const kgN=KAGA.reduce((a,x)=>a+n[x.id],0);
   const akN=n.akOdd+n.akEven+n.akLast;
   let msg='', warn=false;
-  if(ctBad){ msg='現在のゲーム数が、打ち始め（とAT中）のゲーム数より少なくなっています。入力を確認してください。'; warn=true; }
+  if(ctBad){ msg='現在のゲーム数が、打ち始めのゲーム数より少なくなっています。データカウンターの今のゲーム数を入れてください。'; warn=true; }
   else if(n.bonus>n.games){ msg='ボーナスが通常時ゲーム数より多くなっています。入力を確認してください。'; warn=true; }
   else if(n.at>n.bonus){ msg='AT初当たりがボーナスより多くなっています。ATはボーナス経由なので、ボーナスにも数えてください。'; warn=true; }
   else if(n.blue>n.bonus){ msg='青7ボーナスがボーナス初当たりより多くなっています。'; warn=true; }
